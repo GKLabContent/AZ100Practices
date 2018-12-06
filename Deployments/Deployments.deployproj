@@ -25,8 +25,8 @@
   <ItemGroup>
     <Content Include="AZ100T02.2.json" />
     <Content Include="azuredeploy.parameters.json" />
-    <Content Include="AZ100T04.4.json" />
     <Content Include="AZ100T04.3.json" />
+    <Content Include="AZ100T04.json" />
     <None Include="Deployment.targets">
       <Visible>False</Visible>
     </None>
