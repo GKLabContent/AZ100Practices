@@ -1,0 +1,229 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+
+  },
+  "variables": {
+    "prefix": "AZ100T04",
+    "vmAdminUserName": "student",
+    "vmAdminPassword": "Pa55w.rd1234",
+    "vmImagePublisher": "MicrosoftWindowsServer",
+    "vmImageOffer": "WindowsServer",
+    "vmImageSku": "2016-Datacenter",
+    "vmOSDiskName": "vmOSDisk",
+    "vmVmSize": "Standard_D2_v2",
+    "vmVnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'vnet')]",
+    "vpnType": "RouteBased",
+    "vpnSku": "Basic"
+  },
+  "resources": [
+    {
+      "name": "[concat('az100t5',uniqueString(resourceGroup().id))]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-01-01",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "dependsOn": [],
+      "tags": {
+        "displayName": "AZ100T04 Storage"
+      },
+      "kind": "Storage"
+    },
+    {
+      "name": "[concat(variables('prefix'),copyIndex(),'-VNET')]",
+      "type": "Microsoft.Network/virtualNetworks",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-03-30",
+      "dependsOn": [],
+      "copy": {
+        "name": "vnetCopy",
+        "count": 3
+      },
+      "tags": {
+        "displayName": "AZ100T04 vnet"
+      },
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[concat('10.',copyIndex(),'.0.0/16')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "default",
+            "properties": {
+              "addressPrefix": "[concat('10.',copyIndex(),'.0.0/24')]"
+            }
+          },
+          {
+            "name": "GatewaySubnet",
+            "properties": {
+              "addressPrefix": "[concat('10.',copyIndex(),'.255.0/24')]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "[concat(variables('prefix'),copyIndex(),'-NIC')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-03-30",
+      "copy": {
+        "name": "nicCopy",
+        "count": 3
+      },
+      "dependsOn": [
+        "vnetCopy",
+        "pipCopy"
+      ],
+      "tags": {
+        "displayName": "AZ100T04 Nic"
+      },
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', concat(variables('prefix'),copyIndex(),'-VNET')), '/subnets/default')]"
+              },
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('prefix'),copyIndex(),'-PIP'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "[concat(variables('prefix'),copyIndex(),'-VM')]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2017-03-30",
+      "copy": {
+        "name": "vmCopy",
+        "count": 3
+      },
+      "dependsOn": [
+        "nicCopy"
+      ],
+      "tags": {
+        "displayName": "AZ100T04 VM"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[variables('vmVmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[concat(variables('prefix'),copyIndex(),'-VM')]",
+          "adminUsername": "[variables('vmAdminUsername')]",
+          "adminPassword": "[variables('vmAdminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables('vmImagePublisher')]",
+            "offer": "[variables('vmImageOffer')]",
+            "sku": "[variables('vmImageSku')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "[concat(variables('prefix'),copyIndex(),'-OSDisk')]",
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('prefix'),copyIndex(),'-NIC'))]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "[concat(variables('prefix'),copyIndex(),'-PIP')]",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-03-30",
+      "copy": {
+        "name": "pipCopy",
+        "count": 3
+      },
+      "dependsOn": [],
+      "tags": {
+        "displayName": "AZ100T04 PIP"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic"
+      }
+    },
+
+    {
+      "name": "[concat(variables('prefix'),copyIndex(),'-VPN-PIP')]",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-03-30",
+      "copy": {
+        "name": "vpnPipCopy",
+        "count": 2
+      },
+      "dependsOn": [],
+      "tags": {
+        "displayName": "AZ100T04 VPN PIP"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic"
+      }
+    },
+
+    {
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Network/virtualNetworkGateways",
+      "name": "[concat(variables('prefix'),copyIndex(),'-VPN')]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "displayName": "AZ100T04 VP"
+      },
+      "copy": {
+        "name": "vpnCopy",
+        "count": 2
+      },
+      "dependsOn": [
+        "vpnPipCopy",
+        "vnetCopy"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', concat(variables('prefix'),copyIndex(),'-VNET')), '/subnets/GatewaySubnet')"
+              },
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('prefix'),copyIndex(),'-VPN-PIP'))]"
+              }
+            },
+            "name": "vnetGatewayConfig"
+          }
+        ],
+        "sku": {
+          "name": "[variables('vpnSku')]",
+          "tier": "[variables('vpnSku')]"
+        },
+        "gatewayType": "Vpn",
+        "vpnType": "[variables('vpnType')]",
+        "enableBgp": "false"
+      }
+    }
+
+  ],
+  "outputs": {
+  }
+}
