@@ -2,10 +2,6 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "pipDnsName": {
-      "type": "string",
-      "minLength": 1
-    }
   },
   "variables": {
     "saName": "[concat('sa', uniqueString(resourceGroup().id))]",
@@ -26,7 +22,9 @@
     "vmSubnetRef": "[concat(variables('vmVnetID'), '/subnets/', variables('vnetSubnet1Name'))]",
     "vmStorageAccountContainerName": "vhds",
     "vmNicName": "[concat(parameters('vmName'), 'NetworkInterface')]",
-    "pipName": "pip"
+    "pipName": "pip",
+    "IISArchiveFolder": "DSC",
+    "IISArchiveFileName": "IIS.zip"
   },
   "resources": [
     {
@@ -141,7 +139,40 @@
             }
           ]
         }
-      }
+      },
+      "resources": [
+        {
+          "name": "Microsoft.Powershell.DSC",
+          "type": "extensions",
+          "location": "[resourceGroup().location]",
+          "apiVersion": "2016-03-30",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', variables('vmNames')[0])]"
+          ],
+          "tags": {
+            "displayName": "IIS"
+          },
+          "properties": {
+            "publisher": "Microsoft.Powershell",
+            "type": "DSC",
+            "typeHandlerVersion": "2.9",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "configuration": {
+                "url": "https://github.com/GKLabContent/AZ100Practices/blob/master/Deployments/IIS.zip?raw=true",
+                "script": "IIS.ps1",
+                "function": "Main"
+              },
+              "configurationArguments": {
+                "nodeName": "[variables('vmNames')[0]]"
+              }
+            },
+            "protectedSettings": {
+              "configurationUrlSasToken": "[parameters('_artifactsLocationSasToken')]"
+            }
+          }
+        }
+      ]
     },
     {
       "name": "[variables('vmNames')[1]]",
