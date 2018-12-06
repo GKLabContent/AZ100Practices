@@ -1,0 +1,209 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "pipDnsName": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "variables": {
+    "saName": "[concat('sa', uniqueString(resourceGroup().id))]",
+    "saType": "Standard_LRS",
+    "vnetName": "myVirtualNetwork",
+    "vnetPrefix": "10.0.0.0/16",
+    "vnetSubnet1Name": "mySubnet",
+    "vnetSubnet1Prefix": "10.0.0.0/24",
+    "vmNames": [ "myVmWeb", "myVmWeb" ],
+    "vmAdminUserName": "student",
+    "vmAdminPassword": "Pa55w.rd1234",
+    "vmImagePublisher": "MicrosoftWindowsServer",
+    "vmImageOffer": "WindowsServer",
+    "vmImageSku": "2016-Datacenter",
+    "vmOSDiskName": "vmOSDisk",
+    "vmVmSize": "Standard_D2_v2",
+    "vmVnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'vnet')]",
+    "vmSubnetRef": "[concat(variables('vmVnetID'), '/subnets/', variables('vnetSubnet1Name'))]",
+    "vmStorageAccountContainerName": "vhds",
+    "vmNicName": "[concat(parameters('vmName'), 'NetworkInterface')]",
+    "pipName": "pip"
+  },
+  "resources": [
+    {
+      "name": "[variables('saName')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-01-01",
+      "sku": {
+        "name": "[variables('saType')]"
+      },
+      "dependsOn": [],
+      "tags": {
+        "displayName": "sa"
+      },
+      "kind": "Storage"
+    },
+    {
+      "name": "[variables('vnetName')]",
+      "type": "Microsoft.Network/virtualNetworks",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-03-30",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "vnet"
+      },
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('vnetPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('vnetSubnet1Name')]",
+            "properties": {
+              "addressPrefix": "[variables('vnetSubnet1Prefix')]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "[concat(variables('vmNames')[copyIndex()],'-NIC')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-03-30",
+      "copy": {
+        "name": "nicCopy",
+        "count": 2
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "pipCopy"
+      ],
+      "tags": {
+        "displayName": "vmNic"
+      },
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('vmSubnetRef')]"
+              },
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('vmNames')[copyIndex()],'-PIP'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "[variables('vmNames')[0]]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2017-03-30",
+      "dependsOn": [
+        "nicCopy"
+      ],
+      "tags": {
+        "displayName": "vm"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[variables('vmVmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[variables('vmNames')[0]]",
+          "adminUsername": "[variables('vmAdminUsername')]",
+          "adminPassword": "[variables('vmAdminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables('vmImagePublisher')]",
+            "offer": "[variables('vmImageOffer')]",
+            "sku": "[variables('vmImageSku')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "[concat(variables('vmNames')[0],'-OSDisk')]",
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('vmNames')[0],'NIC'))]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "[variables('vmNames')[1]]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2017-03-30",
+      "dependsOn": [
+        "nicCopy"
+      ],
+      "tags": {
+        "displayName": "vm 2"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[variables('vmVmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[variables('vmNames')[1]]",
+          "adminUsername": "[variables('vmAdminUsername')]",
+          "adminPassword": "[variables('vmAdminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables('vmImagePublisher')]",
+            "offer": "[variables('vmImageOffer')]",
+            "sku": "[variables('vmImageSku')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "[concat(variables('vmNames')[1],'-OSDisk')]",
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('vmNames')[1],'NIC'))]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "[concat(variables('vmNames')[copyIndex()],'-PIP')]",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "copy": {
+        "name": "pipCopy",
+        "count": 2
+      },
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-03-30",
+      "dependsOn": [ ],
+      "tags": {
+        "displayName": "pip"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic"
+
+      }
+    }
+  ],
+  "outputs": {
+  }
+}

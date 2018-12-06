@@ -204,7 +204,7 @@
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
               "subnet": {
-                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', concat(variables('prefix'),copyIndex(),'-VNET')), '/subnets/GatewaySubnet')"
+                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', concat(variables('prefix'),copyIndex(),'-VNET')), '/subnets/GatewaySubnet')]"
               },
               "publicIPAddress": {
                 "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('prefix'),copyIndex(),'-VPN-PIP'))]"

@@ -25,11 +25,13 @@
   <ItemGroup>
     <Content Include="AZ100T02.2.json" />
     <Content Include="azuredeploy.parameters.json" />
-    <Content Include="AZ100T04.json" />
+    <Content Include="AZ100T04.4.json" />
+    <None Include="AZ100T04.3.json" />
     <None Include="Deployment.targets">
       <Visible>False</Visible>
     </None>
     <Content Include="Deploy-AzureResourceGroup.ps1" />
+    <None Include="IIS.zip" />
   </ItemGroup>
   <Target Name="GetReferenceAssemblyPaths" />
 </Project>
