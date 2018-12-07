@@ -27,6 +27,9 @@
     <Content Include="azuredeploy.parameters.json" />
     <Content Include="AZ100T04.3.json" />
     <Content Include="AZ100T04.json" />
+    <None Include="Deploy-AZ100T02.ps1" />
+    <None Include="Deploy-AZ100T04M04.ps1" />
+    <None Include="Deploy-AZ100T05M03.ps1" />
     <None Include="Deployment.targets">
       <Visible>False</Visible>
     </None>
