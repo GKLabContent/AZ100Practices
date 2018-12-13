@@ -6,6 +6,7 @@
   },
   "variables": {
     "prefix": "AZ100T04",
+    "names" : ["onPrem","hub","spoke"],
     "vmAdminUserName": "student",
     "vmAdminPassword": "Pa55w.rd1234",
     "vmImagePublisher": "MicrosoftWindowsServer",
@@ -19,7 +20,7 @@
   },
   "resources": [
     {
-      "name": "[concat('az100t5',uniqueString(resourceGroup().id))]",
+      "name": "[concat('az100t4',uniqueString(resourceGroup().id))]",
       "type": "Microsoft.Storage/storageAccounts",
       "location": "[resourceGroup().location]",
       "apiVersion": "2016-01-01",
@@ -33,7 +34,7 @@
       "kind": "Storage"
     },
     {
-      "name": "[concat(variables('prefix'),copyIndex(),'-VNET')]",
+      "name": "[concat(variables('names')[copyIndex()],'-VNET')]",
       "type": "Microsoft.Network/virtualNetworks",
       "location": "[resourceGroup().location]",
       "apiVersion": "2016-03-30",
@@ -68,7 +69,7 @@
       }
     },
     {
-      "name": "[concat(variables('prefix'),copyIndex(),'-NIC')]",
+      "name": "[concat(variables('names')[copyIndex()],'-NIC')]",
       "type": "Microsoft.Network/networkInterfaces",
       "location": "[resourceGroup().location]",
       "apiVersion": "2016-03-30",
@@ -90,10 +91,10 @@
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
               "subnet": {
-                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', concat(variables('prefix'),copyIndex(),'-VNET')), '/subnets/default')]"
+                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', concat(variables('names')[copyIndex()],'-VNET')), '/subnets/default')]"
               },
               "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('prefix'),copyIndex(),'-PIP'))]"
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('names')[copyIndex()],'-PIP'))]"
               }
             }
           }
@@ -101,7 +102,7 @@
       }
     },
     {
-      "name": "[concat(variables('prefix'),copyIndex(),'-VM')]",
+      "name": "[concat(variables('names')[copyIndex()],'-VM')]",
       "type": "Microsoft.Compute/virtualMachines",
       "location": "[resourceGroup().location]",
       "apiVersion": "2017-03-30",
@@ -120,7 +121,7 @@
           "vmSize": "[variables('vmVmSize')]"
         },
         "osProfile": {
-          "computerName": "[concat(variables('prefix'),copyIndex(),'-VM')]",
+          "computerName": "[concat(variables('names')[copyIndex()],'-VM')]",
           "adminUsername": "[variables('vmAdminUsername')]",
           "adminPassword": "[variables('vmAdminPassword')]"
         },
@@ -132,7 +133,7 @@
             "version": "latest"
           },
           "osDisk": {
-            "name": "[concat(variables('prefix'),copyIndex(),'-OSDisk')]",
+            "name": "[concat(variables('names')[copyIndex()],'-OSDisk')]",
             "caching": "ReadWrite",
             "createOption": "FromImage"
           }
@@ -140,14 +141,14 @@
         "networkProfile": {
           "networkInterfaces": [
             {
-              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('prefix'),copyIndex(),'-NIC'))]"
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('names')[copyIndex()],'-NIC'))]"
             }
           ]
         }
       }
     },
     {
-      "name": "[concat(variables('prefix'),copyIndex(),'-PIP')]",
+      "name": "[concat(variables('names')[copyIndex()],'-PIP')]",
       "type": "Microsoft.Network/publicIPAddresses",
       "location": "[resourceGroup().location]",
       "apiVersion": "2016-03-30",
@@ -165,7 +166,7 @@
     },
 
     {
-      "name": "[concat(variables('prefix'),copyIndex(),'-VPN-PIP')]",
+      "name": "[concat(variables('names')[copyIndex()],'-VPN-PIP')]",
       "type": "Microsoft.Network/publicIPAddresses",
       "location": "[resourceGroup().location]",
       "apiVersion": "2016-03-30",
@@ -185,7 +186,7 @@
     {
       "apiVersion": "2015-06-15",
       "type": "Microsoft.Network/virtualNetworkGateways",
-      "name": "[concat(variables('prefix'),copyIndex(),'-VPN')]",
+      "name": "[concat(variables('names')[copyIndex()],'-VPN')]",
       "location": "[resourceGroup().location]",
       "tags": {
         "displayName": "AZ100T04 VP"
@@ -204,10 +205,10 @@
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
               "subnet": {
-                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', concat(variables('prefix'),copyIndex(),'-VNET')), '/subnets/GatewaySubnet')]"
+                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', concat(variables('names')[copyIndex()],'-VNET')), '/subnets/GatewaySubnet')]"
               },
               "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('prefix'),copyIndex(),'-VPN-PIP'))]"
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('names')[copyIndex()],'-VPN-PIP'))]"
               }
             },
             "name": "vnetGatewayConfig"
