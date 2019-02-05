@@ -1,6 +1,7 @@
 ﻿$uri = "https://raw.githubusercontent.com/GKLabContent/AZ100Practices/master/Deployments/AZ100T04.json"
 $rg = "AZ100T04M04"
 $location = "EastUS"
+Login-AzureRmAccount
 
 $rgObject = Get-AzureRmResourceGroup -Name $rg -ErrorAction SilentlyContinue
 
